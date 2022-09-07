@@ -1,6 +1,14 @@
 import face_recognition
 import cv2
 import numpy as np
+import sys
+import urllib.request
+
+# Prepare Students data
+parameter = sys.argv[1]
+students_data = parameter.split(";")
+while("" in students_data) :
+    students_data.remove("")
 
 # This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
 # other example, but it includes some basic performance tweaks to make things run a lot faster:
@@ -14,23 +22,16 @@ import numpy as np
 # Get a reference to webcam #0 (the default one)
 video_capture = cv2.VideoCapture(0)
 
-# Load a sample picture and learn how to recognize it.
-obama_image = face_recognition.load_image_file("python/obama.jpg")
-obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
+known_face_encodings = []
+known_face_names = []
 
-# # Load a second sample picture and learn how to recognize it.
-biden_image = face_recognition.load_image_file("python/biden.jpg")
-biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
-
-# Create arrays of known face encodings and their names
-known_face_encodings = [
-    obama_face_encoding,
-    biden_face_encoding
-]
-known_face_names = [
-    "Barack Obama",
-    "Joe Biden"
-]
+for student_data in students_data:
+    student_register_data = student_data.split(",")
+    reponse_image = urllib.request.urlopen(student_register_data[2])
+    student_image = face_recognition.load_image_file(reponse_image)
+    student_face_encoding = face_recognition.face_encodings(student_image)[0]
+    known_face_encodings.append(student_face_encoding)
+    known_face_names.append(student_register_data[1] + "," + student_register_data[0])
 
 # Initialize some variables
 face_locations = []
@@ -38,6 +39,7 @@ face_encodings = []
 face_names = []
 process_this_frame = True
 
+students_registered = []
 while True:
     # Grab a single frame of video
     ret, frame = video_capture.read()
@@ -58,18 +60,16 @@ while True:
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
             matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = "Unknown"
-
-            # # If a match was found in known_face_encodings, just use the first one.
-            # if True in matches:
-            #     first_match_index = matches.index(True)
-            #     name = known_face_names[first_match_index]
+            name = "Desconhecido"
 
             # Or instead, use the known face with the smallest distance to the new face
             face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
             best_match_index = np.argmin(face_distances)
             if matches[best_match_index]:
                 name = known_face_names[best_match_index]
+                student = name.split(",")[1]
+                students_registered.append(student)
+
 
             face_names.append(name)
 
@@ -102,3 +102,9 @@ while True:
 # Release handle to the webcam
 video_capture.release()
 cv2.destroyAllWindows()
+
+output = ""
+final_students_registered = list(set(students_registered))
+for student_registered in final_students_registered:
+    output += student_registered + ","
+print(output)
