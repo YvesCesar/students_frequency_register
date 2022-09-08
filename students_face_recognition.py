@@ -29,7 +29,11 @@ for student_data in students_data:
     student_register_data = student_data.split(",")
     reponse_image = urllib.request.urlopen(student_register_data[2])
     student_image = face_recognition.load_image_file(reponse_image)
-    student_face_encoding = face_recognition.face_encodings(student_image)[0]
+    try:
+        student_face_encoding = face_recognition.face_encodings(student_image)[0]
+    except IndexError as e:
+        print(e)
+        sys.exit(1)
     known_face_encodings.append(student_face_encoding)
     known_face_names.append(student_register_data[1] + "," + student_register_data[0])
 
